@@ -3,15 +3,23 @@ import struct
 import fcntl
 
 
+class errors():
+    permission_error = 'You must be root!'
+    os_error = 'No such device '
+    value_mac_error = 'Bad mac address. Example of correct mac address "00:00:00:00:00:00"'
+    value_ip_error = 'Bad mac address. Example of correct ip address "192.168.0.0"'
+
+
+
 class arpspoof():
     def __init__(self, interface : str) -> None:
         try:
             self.sock = socket.socket(socket.AF_PACKET, socket.SOCK_RAW)
             self.sock.bind((interface, 0x0806))
         except PermissionError:
-            raise PermissionError('You must be root!')
+            raise PermissionError(errors.permission_error)
         except OSError:
-            raise OSError(f'No such device {interface}')
+            raise OSError(errors.os_error + interface)
         
         self.interface = interface
         self.arp_type = b'\x08\x06'
@@ -25,7 +33,7 @@ class arpspoof():
 
         self.part_of_payload = htype + ptype + hlen + plen
 
-    def send_packet(self, isOperRequest : bool, SHA, SPA, THA, TPA) -> None:
+    def send_packet(self, isOperRequest : bool, SHA : bytes, SPA : bytes, THA : bytes, TPA : bytes) -> None:
         if isOperRequest == True: 
             oper = self.oper_request
         else: 
@@ -37,19 +45,6 @@ class arpspoof():
         
         self.sock.send(packet)
 
-    def recv_packet(self) -> bytes:
-        return self.sock.recv(42)
-    
-    def get_target_mac(self, target_ip : bytes) -> bytes:
-        SHA = self.get_own_mac()
-        SPA = self.get_own_ip()
-        THA = b'\xff\xff\xff\xff\xff\xff'
-        TPA = target_ip
-
-        self.send_packet(True, SHA, SPA, THA, TPA)
-        reply = self.recv_packet()
-        return reply[6:12]
-
     def get_own_ip(self) -> bytes:
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         packed_iface = struct.pack('256s', self.interface.encode('utf_8'))
@@ -59,15 +54,36 @@ class arpspoof():
 
     def get_own_mac(self) -> bytes:
         return self.sock.getsockname()[4]
+    
+    def start_arpspoofing(self, victim_ip : bytes, gateway_ip : bytes):
+        victim_mac = self.get_target_mac(victim_ip)
+        gateway_mac = self.get_target_mac(gateway_ip)
+        print(victim_mac, gateway_mac)
+
+def mac_from_string_to_bytes(mac : str) -> bytes:
+    try:
+        result = bytes.fromhex(mac.lower().replace(':', ' '))
+    except ValueError:
+        raise ValueError(errors.value_mac_error)
+    return result
+
+def ipv4_from_string_to_bytes(ip : str) -> bytes:
+    try:
+        result = socket.inet_aton(ip)
+    except OSError:
+        raise ValueError(errors.value_ip_error)
+    return result
 
 
 if __name__ == "__main__":
-    interface = ''
-    victim_ip = ''
-    gateway_ip = ''
+    # interface = input('interface>>>')
+    # victim_ip = input('victim_ip>>>')
+    # victim_mac = input('victim_mac>>>')
+    # gateway_ip = input('gateway_ip>>>')
+    # gateway_mac = input('gateway_mac>>>')
 
-    spoof = arpspoof()
+    print(ipv4_from_string_to_bytes('192.162..35'))
 
-    
-
-    spoof.sock.close()
+    # spoof = arpspoof(interface)
+    # spoof.start_arpspoofing(socket.inet_aton(victim_ip), socket.inet_aton(gateway_ip))
+    # spoof.sock.close()
