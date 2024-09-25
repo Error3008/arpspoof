@@ -7,8 +7,7 @@ class errors():
     permission_error = 'You must be root!'
     os_error = 'No such device '
     value_mac_error = 'Bad mac address. Example of correct mac address "00:00:00:00:00:00"'
-    value_ip_error = 'Bad mac address. Example of correct ip address "192.168.0.0"'
-
+    value_ip_error = 'Bad ip address. Example of correct ip address "192.168.0.0"'
 
 
 class arpspoof():
@@ -76,13 +75,11 @@ def ipv4_from_string_to_bytes(ip : str) -> bytes:
 
 
 if __name__ == "__main__":
-    # interface = input('interface>>>')
-    # victim_ip = input('victim_ip>>>')
-    # victim_mac = input('victim_mac>>>')
-    # gateway_ip = input('gateway_ip>>>')
-    # gateway_mac = input('gateway_mac>>>')
-
-    print(ipv4_from_string_to_bytes('192.162..35'))
+    interface = input('interface>>>')
+    victim_ip = input('victim_ip>>>')
+    victim_mac = input('victim_mac>>>')
+    gateway_ip = input('gateway_ip>>>')
+    gateway_mac = input('gateway_mac>>>')
 
     # spoof = arpspoof(interface)
     # spoof.start_arpspoofing(socket.inet_aton(victim_ip), socket.inet_aton(gateway_ip))
